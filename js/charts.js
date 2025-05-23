@@ -1,3 +1,18 @@
+// No início de renderDistributionChart ou renderTrendChart
+const chartElement = document.getElementById('distributionChart'); // ou 'trendChart'
+
+if (!window.chartObserver) {
+    window.chartObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                renderChart();
+                window.chartObserver.unobserve(entry.target);
+            }
+        });
+    });
+}
+
+window.chartObserver.observe(chartElement);
 function displayResults(responses) {
     if (!responses || responses.length === 0) {
         alert('Nenhum dado encontrado na planilha');

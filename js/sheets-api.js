@@ -66,3 +66,33 @@ function fetchSheetData(sheetId) {
         }
     });
 }
+// utilities.js
+export function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+}
+
+export function measurePerformance() {
+    const measures = [];
+    return {
+        start(name) { measures[name] = performance.now(); },
+        end(name) { 
+            const duration = performance.now() - measures[name];
+            console.log(`${name} took ${duration.toFixed(2)}ms`);
+            return duration;
+        }
+    };
+}
+// [...] depois do código principal
+
+// Utilitários
+function debounce(func, timeout = 300) {
+    // Implementação igual acima
+}
+
+function measurePerformance() {
+    // Implementação igual acima
+}
