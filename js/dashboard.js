@@ -1,9 +1,12 @@
 // Função principal que é executada quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
     // Configura o botão de voltar
-    document.getElementById('back-btn').addEventListener('click', () => {
-        window.location.href = 'index.html';
-    });
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    }
 
     // Extrai o ID da planilha da URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -24,8 +27,12 @@ document.addEventListener('DOMContentLoaded', function() {
 // Função para carregar a planilha do Google Sheets
 async function loadSheet(sheetId) {
     const container = document.getElementById('sheet-container');
+    if (!container) return;
     
     try {
+        // Mostra loader enquanto carrega
+        container.innerHTML = '<div class="loader"></div>';
+        
         // Cria o iframe para visualização
         const iframe = document.createElement('iframe');
         iframe.src = `https://docs.google.com/spreadsheets/d/${sheetId}/preview?rm=minimal&widget=false&headers=false`;
@@ -35,7 +42,8 @@ async function loadSheet(sheetId) {
         
         // Remove o loader quando o iframe carregar
         iframe.onload = () => {
-            container.querySelector('.loader').style.display = 'none';
+            const loader = container.querySelector('.loader');
+            if (loader) loader.style.display = 'none';
         };
         
         container.appendChild(iframe);
@@ -54,9 +62,6 @@ async function processData(sheetId) {
         
         // Exibe os gráficos
         renderCharts(data);
-        
-        // Exibe os comentários
-        renderComments(data.comments);
         
     } catch (error) {
         showError('Erro ao processar os dados');
@@ -120,7 +125,6 @@ function calculateDistribution(responses) {
 }
 
 function calculateTrends(responses) {
-    // Agrupa por data (implementação simplificada)
     const byDate = {};
     responses.forEach(r => {
         const date = r.date || 'Sem data';
@@ -141,12 +145,13 @@ function calculateTrends(responses) {
 function renderCharts(data) {
     renderDistributionChart(data.distribution);
     renderTrendChart(data.trends);
-    renderNPS(data.nps);
 }
 
 function renderDistributionChart(distribution) {
-    const ctx = document.getElementById('distributionChart').getContext('2d');
-    new Chart(ctx, {
+    const ctx = document.getElementById('distributionChart');
+    if (!ctx) return;
+    
+    new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
             labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
@@ -161,13 +166,15 @@ function renderDistributionChart(distribution) {
                 borderWidth: 1
             }]
         },
-        options: chartOptions('Pontuação NPS', 'Número de respostas')
+        options: getChartOptions('Pontuação NPS', 'Número de respostas')
     });
 }
 
 function renderTrendChart(trends) {
-    const ctx = document.getElementById('trendChart').getContext('2d');
-    new Chart(ctx, {
+    const ctx = document.getElementById('trendChart');
+    if (!ctx) return;
+    
+    new Chart(ctx.getContext('2d'), {
         type: 'line',
         data: {
             labels: trends.map(t => t.date),
@@ -180,11 +187,11 @@ function renderTrendChart(trends) {
                 tension: 0.4
             }]
         },
-        options: chartOptions('Data', 'Pontuação média')
+        options: getChartOptions('Data', 'Pontuação média')
     });
 }
 
-function chartOptions(xLabel, yLabel) {
+function getChartOptions(xLabel, yLabel) {
     return {
         responsive: true,
         scales: {
@@ -200,26 +207,7 @@ function chartOptions(xLabel, yLabel) {
     };
 }
 
-function renderComments(comments) {
-    const container = document.getElementById('comments-container');
-    
-    if (comments.length === 0) {
-        container.innerHTML = '<p>Nenhum comentário encontrado.</p>';
-        return;
-    }
-    
-    container.innerHTML = comments.map(c => `
-        <div class="comment">
-            <div class="comment-header">
-                <span class="score">${c.score}/10</span>
-                <span class="date">${c.date || 'Sem data'}</span>
-            </div>
-            <div class="comment-text">${c.comment}</div>
-        </div>
-    `).join('');
-}
-
 function showError(message) {
-    const container = document.getElementById('sheet-container');
+    const container = document.getElementById('sheet-container') || document.body;
     container.innerHTML = `<div class="error">${message}</div>`;
 }
