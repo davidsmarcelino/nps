@@ -1,6 +1,6 @@
 // js/sheets-api.js
 async function fetchSheetData(sheetId) {
-    const range = 'Respostas ao formulário 1!A2:D'; // Aumentei para D para incluir possíveis comentários
+    const range = 'Respostas ao formulário 1!A2:D'; // Inclui até a coluna D para capturar comentários
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&range=${encodeURIComponent(range)}`;
     console.log('Tentando acessar:', url);
     try {
@@ -36,21 +36,29 @@ function processSheetData(table) {
     
     console.log('Cabeçalhos encontrados:', headers); // Log dos cabeçalhos
     
-    // Ajuste os índices conforme os cabeçalhos reais do Google Forms
-    const dateIndex = headers.findIndex(h => h.toLowerCase().includes('carimbo') || h.toLowerCase().includes('timestamp')); // Coluna A
-    const scoreIndex = headers.findIndex(h => h.toLowerCase().includes('escala') || h.toLowerCase().includes('0 a 10')); // Pergunta de pontuação
-    const commentIndex = headers.findIndex(h => h.toLowerCase().includes('comentário') || h.toLowerCase().includes('resposta')); // Comentários
+    // Tenta identificar os índices com base em palavras-chave
+    const dateIndex = headers.findIndex(h => h.toLowerCase().includes('carimbo') || h.toLowerCase().includes('timestamp') || h.toLowerCase().includes('data'));
+    const scoreIndex = headers.findIndex(h => h.toLowerCase().includes('escala') || h.toLowerCase().includes('0 a 10') || h.toLowerCase().includes('pontuação') || h.toLowerCase().includes('score'));
+    const commentIndex = headers.findIndex(h => h.toLowerCase().includes('comentário') || h.toLowerCase().includes('resposta') || h.toLowerCase().includes('feedback') || h.toLowerCase().includes('observação'));
     
-    if (dateIndex === -1 || scoreIndex === -1 || commentIndex === -1) {
-        throw new Error(`Cabeçalhos esperados (Data, Pontuação, Comentário) não encontrados. Cabeçalhos encontrados: ${headers.join(', ')}`);
+    // Se algum índice não for encontrado, mapeia com base na posição
+    const finalDateIndex = dateIndex !== -1 ? dateIndex : 0; // Assume coluna A para Data
+    const finalScoreIndex = scoreIndex !== -1 ? scoreIndex : 1; // Assume coluna B para Pontuação
+    const finalCommentIndex = commentIndex !== -1 ? commentIndex : 2; // Assume coluna C para Comentário
+    
+    console.log('Índices mapeados:', { dateIndex: finalDateIndex, scoreIndex: finalScoreIndex, commentIndex: finalCommentIndex });
+    
+    // Verifica se há colunas suficientes
+    if (headers.length < 3) {
+        throw new Error(`A planilha deve ter pelo menos 3 colunas (Data, Pontuação, Comentário). Colunas encontradas: ${headers.length}`);
     }
     
     const responses = rows.map(row => {
         const cells = row.c;
         return {
-            score: cells[scoreIndex] ? parseInt(cells[scoreIndex].v) : 0,
-            comment: cells[commentIndex] ? cells[commentIndex].v || '' : '',
-            date: cells[dateIndex] ? cells[dateIndex].v : ''
+            score: cells[finalScoreIndex] ? parseInt(cells[finalScoreIndex].v) : 0,
+            comment: cells[finalCommentIndex] ? cells[finalCommentIndex].v || '' : '',
+            date: cells[finalDateIndex] ? cells[finalDateIndex].v : ''
         };
     });
     
