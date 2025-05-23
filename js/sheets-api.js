@@ -1,55 +1,53 @@
-// Verifica se o DOM está completamente carregado
-document.addEventListener('DOMContentLoaded', function() {
-    const loadBtn = document.getElementById('loadData');
-    const urlInput = document.getElementById('sheetsUrl');
-    
-    // Verifica se os elementos existem antes de continuar
-    if (!loadBtn || !urlInput) {
-        console.error('Elementos não encontrados no DOM');
-        return;
+// js/sheets-api.js
+async function fetchSheetData(sheetId, range) {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&range=${range}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
+        }
+        const text = await response.text();
+        // Extrair JSON da resposta (remover wrapper do Google Visualization)
+        const jsonData = JSON.parse(text.replace(/^.*?\(/, '').replace(/\);$/, ''));
+        
+        if (jsonData.status === 'error') {
+            throw new Error(jsonData.errors?.[0]?.detailed_message || 'Erro ao carregar dados da planilha');
+        }
+
+        return jsonData.table.rows;
+    } catch (error) {
+        console.error('Erro em fetchSheetData:', error);
+        throw new Error(`Falha ao buscar dados da planilha: ${error.message}`);
     }
+}
 
-    loadBtn.addEventListener('click', async function() {
-        const btn = this;
-        try {
-            btn.disabled = true;
-            btn.textContent = 'Carregando...';
-            
-            const url = urlInput.value.trim();
-            
-            if (!url) {
-                alert('Por favor, cole o link da planilha');
-                return;
-            }
+async function processData(sheetId, range, callback) {
+    try {
+        const rows = await fetchSheetData(sheetId, range);
+        const data = rows.map(row => ({
+            date: row.c[0]?.v || 'Desconhecido', // Coluna A: Data
+            response: row.c[1]?.v || '', // Coluna B: Resposta
+            score: row.c[2]?.v || 0 // Coluna C: Pontuação
+        }));
 
-            const sheetId = extractSheetId(url);
-            if (!sheetId) {
-                alert('Link inválido. Use um link do Google Sheets válido.');
-                return;
-            }
+        // Calcular NPS
+        const nps = calculateNPS(data);
+        callback(data, nps);
+    } catch (error) {
+        console.error('Erro em processData:', error);
+        document.getElementById('errorMessage').textContent = `Erro ao processar dados: ${error.message}`;
+        document.getElementById('errorMessage').style.display = 'block';
+    }
+}
 
-            window.location.href = `dashboard.html?sheetId=${sheetId}&embed=true`;
-            
-        } catch (error) {
-            console.error('Erro:', error);
-            alert('Ocorreu um erro ao processar o link');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Carregar Dados';
+function calculateNPS(data) {
+    let promoters = 0, detractors = 0, total = data.length;
+    data.forEach(item => {
+        const score = item.score;
+        if (typeof score === 'number') {
+            if (score >= 9) promoters++;
+            else if (score <= 6) detractors++;
         }
     });
-});
-
-// Função para extrair ID da planilha (certifique-se que está declarada)
-function extractSheetId(url) {
-    if (!url) return null;
-    const patterns = [
-        /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/,
-        /^([a-zA-Z0-9-_]+)$/
-    ];
-    for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match) return match[1];
-    }
-    return null;
+    return total > 0 ? ((promoters / total) - (detractors / total)) * 100 : 0;
 }

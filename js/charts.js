@@ -1,47 +1,35 @@
-// js/charts.js - Versão atualizada
+// js/charts.js
+function renderChart(data, nps) {
+    const ctx = document.getElementById('npsChart').getContext('2d');
+    if (!ctx) {
+        console.error('Canvas npsChart não encontrado');
+        return;
+    }
 
-// Função para inicializar os gráficos com lazy loading
-function initCharts() {
-    const chartElements = [
-        { id: 'distributionChart', type: 'bar' },
-        { id: 'trendChart', type: 'line' }
-    ];
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const chartId = entry.target.id;
-                loadChartData(chartId);
-                observer.unobserve(entry.target);
+    const labels = data.map(item => item.date);
+    const scores = data.map(item => item.score);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Pontuação NPS',
+                data: scores,
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Pontuação' } },
+                x: { title: { display: true, text: 'Data' } }
+            },
+            plugins: {
+                legend: { display: true },
+                title: { display: true, text: `NPS Calculado: ${nps.toFixed(2)}` }
             }
-        });
-    }, { threshold: 0.1 });
-    
-    chartElements.forEach(chart => {
-        const element = document.getElementById(chart.id);
-        if (element) observer.observe(element);
+        }
     });
 }
-
-// Função para carregar dados e renderizar gráfico
-async function loadChartData(chartId) {
-    try {
-        // Obtenha os dados da planilha ou de outra fonte
-        const data = await fetchChartData(chartId);
-        
-        // Renderiza o gráfico específico
-        switch(chartId) {
-            case 'distributionChart':
-                renderDistributionChart(data);
-                break;
-            case 'trendChart':
-                renderTrendChart(data);
-                break;
-        }
-    } catch (error) {
-        console.error(`Erro ao carregar gráfico ${chartId}:`, error);
-    }
-}
-
-// Inicializa quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', initCharts);
