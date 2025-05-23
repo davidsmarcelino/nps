@@ -1,29 +1,31 @@
-// js/dashboard.js
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Extrai o parâmetro da URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const sheetId = urlParams.get('sheetId');
-    
-    if (!sheetId) {
-        alert('Nenhuma planilha especificada. Redirecionando...');
-        window.location.href = 'index.html';
-        return;
-    }
+  const params = new URLSearchParams(window.location.search);
+  const sheetId = params.get('sheetId');
+  
+  if (!sheetId) {
+    alert("Nenhuma planilha selecionada!");
+    window.location.href = "index.html";
+    return;
+  }
 
-    // Configura o iframe para visualização
-    const iframe = document.getElementById('sheets-embed');
-    iframe.src = `https://docs.google.com/spreadsheets/d/${sheetId}/preview?rm=minimal&widget=false&headers=false`;
-    
-    // Ajusta o tamanho do iframe
-    function resizeIframe() {
-        iframe.style.height = (window.innerHeight - 100) + 'px';
-        iframe.style.width = '100%';
-    }
-    
-    window.addEventListener('resize', resizeIframe);
-    resizeIframe();
-    
-    // Carrega os dados para os gráficos (seu código existente)
-    loadDataAndRenderCharts(sheetId);
+  // 1. Carrega a planilha
+  loadGoogleSheet(sheetId);
+  
+  // 2. Seus gráficos (mantenha seu código existente)
+  initCharts(); 
 });
+
+function loadGoogleSheet(sheetId) {
+  const container = document.getElementById('google-sheets-container');
+  
+  // Cria um iframe com o visualizador otimizado
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://docs.google.com/spreadsheets/d/${sheetId}/preview?rm=minimal&widget=false&single=true`;
+  iframe.style.width = '100%';
+  iframe.style.height = '500px';
+  iframe.style.border = 'none';
+  iframe.loading = 'lazy';
+  
+  container.innerHTML = '';
+  container.appendChild(iframe);
+}
