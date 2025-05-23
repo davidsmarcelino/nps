@@ -198,3 +198,17 @@ button:disabled {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+.sheet-container {
+    margin: 20px auto;
+    width: 95%;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#sheets-embed {
+    display: block;
+    margin: 0 auto;
+    border: none;
+}

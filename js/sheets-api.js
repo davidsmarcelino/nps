@@ -47,7 +47,7 @@ document.getElementById('loadData').addEventListener('click', async function() {
         
         // Processamento (simulado com timeout para demonstração)
         setTimeout(() => {
-            window.location.href = `dashboard.html?sheetId=${sheetId}`;
+            window.location.href = `dashboard.html?sheetId=${sheetId}&mode=view`;
             document.body.removeChild(loadingIndicator);
         }, 1000);
         
