@@ -7,26 +7,17 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <button id="back-btn">Voltar</button>
     <h1>Dashboard NPS</h1>
+    <div id="sheet-container"></div>
     <div id="chartContainer">
-        <canvas id="npsChart"></canvas>
+        <canvas id="distributionChart"></canvas>
+        <canvas id="trendChart"></canvas>
     </div>
     <div id="errorMessage"></div>
-
-    <!-- Carregar Chart.js e scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script src="js/sheets-api.js"></script>
     <script src="js/charts.js"></script>
-    <script>
-        // Obter ID da planilha da URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const sheetId = urlParams.get('sheetId');
-        if (sheetId) {
-            processData(sheetId, 'Respostas!A2:C', renderChart);
-        } else {
-            document.getElementById('errorMessage').textContent = 'ID da planilha não informado!';
-            document.getElementById('errorMessage').style.display = 'block';
-        }
-    </script>
+    <script src="js/dashboard.js"></script>
 </body>
 </html>

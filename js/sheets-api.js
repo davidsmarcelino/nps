@@ -1,53 +1,85 @@
 // js/sheets-api.js
-async function fetchSheetData(sheetId, range) {
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&range=${range}`;
+async function fetchSheetData(sheetId) {
+    const range = 'Respostas!A2:C'; // Ajuste conforme a aba e intervalo da sua planilha
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&range=${encodeURIComponent(range)}`;
+    console.log('Tentando acessar:', url); // Log para depuração
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, { method: 'GET', mode: 'cors' });
         if (!response.ok) {
             throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
         }
         const text = await response.text();
-        // Extrair JSON da resposta (remover wrapper do Google Visualization)
+        console.log('Resposta bruta:', text); // Log para depuração
         const jsonData = JSON.parse(text.replace(/^.*?\(/, '').replace(/\);$/, ''));
         
         if (jsonData.status === 'error') {
             throw new Error(jsonData.errors?.[0]?.detailed_message || 'Erro ao carregar dados da planilha');
         }
 
-        return jsonData.table.rows;
+        return processSheetData(jsonData.table);
     } catch (error) {
         console.error('Erro em fetchSheetData:', error);
         throw new Error(`Falha ao buscar dados da planilha: ${error.message}`);
     }
 }
 
-async function processData(sheetId, range, callback) {
-    try {
-        const rows = await fetchSheetData(sheetId, range);
-        const data = rows.map(row => ({
-            date: row.c[0]?.v || 'Desconhecido', // Coluna A: Data
-            response: row.c[1]?.v || '', // Coluna B: Resposta
-            score: row.c[2]?.v || 0 // Coluna C: Pontuação
-        }));
-
-        // Calcular NPS
-        const nps = calculateNPS(data);
-        callback(data, nps);
-    } catch (error) {
-        console.error('Erro em processData:', error);
-        document.getElementById('errorMessage').textContent = `Erro ao processar dados: ${error.message}`;
-        document.getElementById('errorMessage').style.display = 'block';
+function processSheetData(table) {
+    const headers = table.cols.map(col => col.label || '');
+    const rows = table.rows;
+    
+    // Encontra os índices das colunas relevantes
+    const scoreIndex = headers.findIndex(h => h.toLowerCase().includes('pontuação') || h.toLowerCase().includes('score'));
+    const commentIndex = headers.findIndex(h => h.toLowerCase().includes('comentário') || h.toLowerCase().includes('comment'));
+    const dateIndex = headers.findIndex(h => h.toLowerCase().includes('data') || h.toLowerCase().includes('date') || h.toLowerCase().includes('timestamp'));
+    
+    if (scoreIndex === -1 || commentIndex === -1 || dateIndex === -1) {
+        throw new Error('Cabeçalhos esperados (Data, Comentário, Pontuação) não encontrados');
     }
+    
+    const responses = rows.map(row => {
+        const cells = row.c;
+        return {
+            score: cells[scoreIndex] ? parseInt(cells[scoreIndex].v) : 0,
+            comment: cells[commentIndex] ? cells[commentIndex].v : '',
+            date: cells[dateIndex] ? cells[dateIndex].v : ''
+        };
+    });
+    
+    return {
+        responses,
+        nps: calculateNPS(responses),
+        distribution: calculateDistribution(responses),
+        trends: calculateTrends(responses),
+        comments: responses.filter(r => r.comment.trim() !== '')
+    };
 }
 
-function calculateNPS(data) {
-    let promoters = 0, detractors = 0, total = data.length;
-    data.forEach(item => {
-        const score = item.score;
-        if (typeof score === 'number') {
-            if (score >= 9) promoters++;
-            else if (score <= 6) detractors++;
+function calculateNPS(responses) {
+    const promoters = responses.filter(r => r.score >= 9).length;
+    const detractors = responses.filter(r => r.score <= 6).length;
+    const total = responses.length;
+    return total > 0 ? ((promoters - detractors) / total) * 100 : 0;
+}
+
+function calculateDistribution(responses) {
+    const distribution = Array(11).fill(0);
+    responses.forEach(r => distribution[r.score]++);
+    return distribution;
+}
+
+function calculateTrends(responses) {
+    const byDate = {};
+    responses.forEach(r => {
+        const date = r.date || 'Sem data';
+        if (!byDate[date]) {
+            byDate[date] = { sum: 0, count: 0 };
         }
+        byDate[date].sum += r.score;
+        byDate[date].count++;
     });
-    return total > 0 ? ((promoters / total) - (detractors / total)) * 100 : 0;
+    
+    return Object.keys(byDate).map(date => ({
+        date,
+        average: byDate[date].sum / byDate[date].count || 0
+    }));
 }

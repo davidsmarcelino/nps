@@ -1,3 +1,4 @@
+// js/dashboard.js
 // Função principal que é executada quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
     // Configura o botão de voltar
@@ -47,167 +48,32 @@ async function loadSheet(sheetId) {
         };
         
         container.appendChild(iframe);
-        
     } catch (error) {
         showError('Não foi possível carregar a planilha');
         console.error('Erro ao carregar planilha:', error);
     }
 }
 
-// Função para processar os dados e exibir gráficos
+// Função para processar os dados e exibe os gráficos
 async function processData(sheetId) {
     try {
-        // Busca os dados da planilha via API
+        // Busca os dados da planilha
         const data = await fetchSheetData(sheetId);
-        
         // Exibe os gráficos
         renderCharts(data);
-        
     } catch (error) {
-        showError('Erro ao processar os dados');
+        showError(`Erro ao processar os dados: ${error.message}`);
         console.error('Erro ao processar dados:', error);
     }
 }
 
-// Função para buscar dados da planilha
-async function fetchSheetData(sheetId) {
-    try {
-        const response = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`);
-        const text = await response.text();
-        const json = JSON.parse(text.substr(47).slice(0, -2));
-        
-        return processSheetData(json.table);
-    } catch (error) {
-        throw new Error('Falha ao buscar dados da planilha');
-    }
-}
-
-// Função para processar os dados da planilha
-function processSheetData(table) {
-    const headers = table.cols.map(col => col.label);
-    const rows = table.rows;
-    
-    // Encontra os índices das colunas relevantes
-    const scoreIndex = headers.findIndex(h => h.toLowerCase().includes('score') || h.includes('pontuação'));
-    const commentIndex = headers.findIndex(h => h.toLowerCase().includes('comment') || h.includes('comentário'));
-    const dateIndex = headers.findIndex(h => h.toLowerCase().includes('date') || h.includes('data'));
-    
-    // Processa as respostas
-    const responses = rows.map(row => {
-        const cells = row.c;
-        return {
-            score: cells[scoreIndex] ? parseInt(cells[scoreIndex].v) : 0,
-            comment: cells[commentIndex] ? cells[commentIndex].v : '',
-            date: cells[dateIndex] ? cells[dateIndex].v : ''
-        };
-    });
-    
-    return {
-        responses,
-        nps: calculateNPS(responses),
-        distribution: calculateDistribution(responses),
-        trends: calculateTrends(responses),
-        comments: responses.filter(r => r.comment.trim() !== '')
-    };
-}
-
-// Funções auxiliares para cálculos
-function calculateNPS(responses) {
-    const promoters = responses.filter(r => r.score >= 9).length;
-    const detractors = responses.filter(r => r.score <= 6).length;
-    return ((promoters - detractors) / responses.length) * 100;
-}
-
-function calculateDistribution(responses) {
-    const distribution = Array(11).fill(0);
-    responses.forEach(r => distribution[r.score]++);
-    return distribution;
-}
-
-function calculateTrends(responses) {
-    const byDate = {};
-    responses.forEach(r => {
-        const date = r.date || 'Sem data';
-        if (!byDate[date]) {
-            byDate[date] = { sum: 0, count: 0 };
-        }
-        byDate[date].sum += r.score;
-        byDate[date].count++;
-    });
-    
-    return Object.keys(byDate).map(date => ({
-        date,
-        average: byDate[date].sum / byDate[date].count
-    }));
-}
-
-// Funções para renderização
-function renderCharts(data) {
-    renderDistributionChart(data.distribution);
-    renderTrendChart(data.trends);
-}
-
-function renderDistributionChart(distribution) {
-    const ctx = document.getElementById('distributionChart');
-    if (!ctx) return;
-    
-    new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-            datasets: [{
-                label: 'Número de respostas',
-                data: distribution,
-                backgroundColor: [
-                    '#e74c3c', '#e74c3c', '#e74c3c',
-                    '#f39c12', '#f39c12', '#f39c12', '#f39c12',
-                    '#2ecc71', '#2ecc71', '#2ecc71', '#2ecc71'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: getChartOptions('Pontuação NPS', 'Número de respostas')
-    });
-}
-
-function renderTrendChart(trends) {
-    const ctx = document.getElementById('trendChart');
-    if (!ctx) return;
-    
-    new Chart(ctx.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: trends.map(t => t.date),
-            datasets: [{
-                label: 'Média diária',
-                data: trends.map(t => t.average),
-                borderColor: '#3498db',
-                backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: getChartOptions('Data', 'Pontuação média')
-    });
-}
-
-function getChartOptions(xLabel, yLabel) {
-    return {
-        responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                max: 10,
-                title: { display: true, text: yLabel }
-            },
-            x: {
-                title: { display: true, text: xLabel }
-            }
-        }
-    };
-}
-
+// Função para exibir erros
 function showError(message) {
-    const container = document.getElementById('sheet-container') || document.body;
-    container.innerHTML = `<div class="error">${message}</div>`;
+    const errorElement = document.getElementById('errorMessage');
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    } else {
+        console.error('Elemento errorMessage não encontrado');
+    }
 }

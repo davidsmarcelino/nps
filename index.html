@@ -3,31 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizador NPS - Google Sheets</title>
+    <title>Entrada NPS</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Visualizador de Pesquisa NPS</h1>
-        <p>Cole o link da sua planilha Google Sheets para visualizar os resultados</p>
-        
-        <div class="input-container">
-            <input type="text" id="sheetsUrl" placeholder="https://docs.google.com/spreadsheets/d/1XyZ...">
-            <button id="loadData">Carregar Dados</button>
-        </div>
-        
-        <div class="instructions">
-            <h3>Como usar:</h3>
-            <ol>
-                <li>Crie um formulário Google para coletar as respostas NPS (0-10)</li>
-                <li>As respostas serão salvas em uma planilha Google</li>
-                <li>Compartilhe a planilha (configuração "Qualquer um com o link pode visualizar")</li>
-                <li>Cole o link acima e visualize os resultados</li>
-            </ol>
-        </div>
-    </div>
-
-    <script src="js/sheets-api.js"></script>
-    <script src="js/charts.js"></script>
+    <h1>Dashboard NPS</h1>
+    <form id="sheetForm">
+        <label for="sheetUrl">Link da Planilha:</label>
+        <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+        <button type="submit">Visualizar Dashboard</button>
+    </form>
+    <div id="errorMessage"></div>
+    <script>
+        document.getElementById('sheetForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const url = document.getElementById('sheetUrl').value;
+            const sheetId = url.match(/\/d\/(.+?)\//)?.[1];
+            if (sheetId) {
+                window.location.href = `dashboard.html?sheetId=${sheetId}`;
+            } else {
+                document.getElementById('errorMessage').textContent = 'Link da planilha inválido!';
+                document.getElementById('errorMessage').style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>

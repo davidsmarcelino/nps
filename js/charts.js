@@ -1,35 +1,76 @@
 // js/charts.js
-function renderChart(data, nps) {
-    const ctx = document.getElementById('npsChart').getContext('2d');
+function renderCharts(data) {
+    renderDistributionChart(data.distribution);
+    renderTrendChart(data.trends);
+}
+
+function renderDistributionChart(distribution) {
+    const ctx = document.getElementById('distributionChart');
     if (!ctx) {
-        console.error('Canvas npsChart não encontrado');
+        console.error('Canvas distributionChart não encontrado');
         return;
     }
-
-    const labels = data.map(item => item.date);
-    const scores = data.map(item => item.score);
-
-    new Chart(ctx, {
+    
+    new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
             datasets: [{
-                label: 'Pontuação NPS',
-                data: scores,
-                backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                borderColor: 'rgba(75, 192, 192, 1)',
+                label: 'Número de respostas',
+                data: distribution,
+                backgroundColor: [
+                    '#e74c3c', '#e74c3c', '#e74c3c',
+                    '#f39c12', '#f39c12', '#f39c12', '#f39c12',
+                    '#2ecc71', '#2ecc71', '#2ecc71', '#2ecc71'
+                ],
+                borderColor: [
+                    '#c0392b', '#c0392b', '#c0392b',
+                    '#e67e22', '#e67e22', '#e67e22', '#e67e22',
+                    '#27ae60', '#27ae60', '#27ae60', '#27ae60'
+                ],
                 borderWidth: 1
             }]
         },
-        options: {
-            scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Pontuação' } },
-                x: { title: { display: true, text: 'Data' } }
+        options: getChartOptions('Pontuação NPS', 'Número de respostas')
+    });
+}
+
+function renderTrendChart(trends) {
+    const ctx = document.getElementById('trendChart');
+    if (!ctx) {
+        console.error('Canvas trendChart não encontrado');
+        return;
+    }
+    
+    new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: trends.map(t => t.date),
+            datasets: [{
+                label: 'Média diária',
+                data: trends.map(t => t.average),
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: getChartOptions('Data', 'Pontuação média')
+    });
+}
+
+function getChartOptions(xLabel, yLabel) {
+    return {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 10,
+                title: { display: true, text: yLabel }
             },
-            plugins: {
-                legend: { display: true },
-                title: { display: true, text: `NPS Calculado: ${nps.toFixed(2)}` }
+            x: {
+                title: { display: true, text: xLabel }
             }
         }
-    });
+    };
 }
