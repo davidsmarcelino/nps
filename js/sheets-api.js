@@ -9,15 +9,18 @@ async function fetchSheetData(sheetId) {
             throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
         }
         const text = await response.text();
-        console.log('Resposta bruta:', text);
-        const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
-        if (!jsonMatch || !jsonMatch[1]) {
-            throw new Error('Formato de resposta inválido');
+        console.log('Resposta bruta (completa):', text); // Log completo para depuração
+        // Remover o prefixo ')]}' e quaisquer espaços antes do JSON
+        const jsonString = text.replace(/^\)\]\}'/, '').trim();
+        console.log('JSON extraído após remover prefixo:', jsonString); // Log do JSON extraído
+        if (!jsonString) {
+            throw new Error('Resposta vazia após remover prefixo');
         }
-        const jsonData = JSON.parse(jsonMatch[1]);
+        const jsonData = JSON.parse(jsonString);
         if (jsonData.status === 'error') {
             throw new Error(jsonData.errors?.[0]?.detailed_message || 'Erro ao carregar dados da planilha');
         }
+        console.log('JSON parseado com sucesso:', jsonData);
         return processSheetData(jsonData.table);
     } catch (error) {
         console.error('Erro em fetchSheetData:', error);
@@ -29,13 +32,15 @@ function processSheetData(table) {
     const headers = table.cols.map(col => col.label || '');
     const rows = table.rows;
     
+    console.log('Cabeçalhos encontrados:', headers); // Log dos cabeçalhos
+    
     // Ajuste os índices conforme os cabeçalhos reais
-    const scoreIndex = headers.findIndex(h => h.toLowerCase().includes('pontuação') || h.match(/\d+$/));
-    const commentIndex = headers.findIndex(h => h.toLowerCase().includes('comentário') || h.toLowerCase().includes('resposta'));
+    const scoreIndex = headers.findIndex(h => h.match(/\d+$/) || h.toLowerCase().includes('pontuação')); // Procura por números no final ou 'pontuação'
+    const commentIndex = headers.findIndex(h => h.toLowerCase().includes('comentário') || h.toLowerCase().includes('resposta') || h.includes('escala')); // Ajuste para a coluna B
     const dateIndex = headers.findIndex(h => h.toLowerCase().includes('carimbo') || h.toLowerCase().includes('data'));
     
     if (scoreIndex === -1 || commentIndex === -1 || dateIndex === -1) {
-        throw new Error('Cabeçalhos esperados (Data, Comentário, Pontuação) não encontrados. Cabeçalhos encontrados:', headers.join(', '));
+        throw new Error(`Cabeçalhos esperados (Data, Comentário, Pontuação) não encontrados. Cabeçalhos encontrados: ${headers.join(', ')}`);
     }
     
     const responses = rows.map(row => {
