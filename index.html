@@ -11,20 +11,27 @@
     <form id="sheetForm">
         <label for="sheetUrl">Link da Planilha:</label>
         <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
-        <button type="submit">Visualizar Dashboard</button>
+        <button type="submit">Carregar Dados</button>
     </form>
     <div id="errorMessage"></div>
     <script>
-        document.getElementById('sheetForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const url = document.getElementById('sheetUrl').value;
-            const sheetId = url.match(/\/d\/(.+?)\//)?.[1];
-            if (sheetId) {
-                window.location.href = `dashboard.html?sheetId=${sheetId}`;
-            } else {
-                document.getElementById('errorMessage').textContent = 'Link da planilha inválido!';
-                document.getElementById('errorMessage').style.display = 'block';
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('sheetForm');
+            if (!form) {
+                console.error('Formulário sheetForm não encontrado');
+                return;
             }
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const url = document.getElementById('sheetUrl').value;
+                const sheetId = url.match(/\/d\/(.+?)\//)?.[1];
+                if (sheetId) {
+                    window.location.href = `dashboard.html?sheetId=${sheetId}`;
+                } else {
+                    document.getElementById('errorMessage').textContent = 'Link da planilha inválido!';
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
+            });
         });
     </script>
 </body>
