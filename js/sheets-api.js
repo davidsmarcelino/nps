@@ -10,12 +10,15 @@ async function fetchSheetData(sheetId) {
         }
         const text = await response.text();
         console.log('Resposta bruta:', text); // Log para depuração
-        const jsonData = JSON.parse(text.replace(/^.*?\(/, '').replace(/\);$/, ''));
-        
+        // Extrair o JSON de forma robusta
+        const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+        if (!jsonMatch || !jsonMatch[1]) {
+            throw new Error('Formato de resposta inválido');
+        }
+        const jsonData = JSON.parse(jsonMatch[1]);
         if (jsonData.status === 'error') {
             throw new Error(jsonData.errors?.[0]?.detailed_message || 'Erro ao carregar dados da planilha');
         }
-
         return processSheetData(jsonData.table);
     } catch (error) {
         console.error('Erro em fetchSheetData:', error);
