@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard NPS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sheets-preview">
+            <h2>Planilha de Dados</h2>
+            <iframe id="sheetsPreview" frameborder="0"></iframe>
+            <div class="sheet-actions">
+                <button id="changeSheet">Alterar Planilha</button>
+                <button id="refreshData">Atualizar Dados</button>
+            </div>
+        </div>
+        
+        <div class="analytics">
+            <h2>Análise NPS</h2>
+            
+            <div class="nps-score">
+                <div class="score-value" id="npsValue">--</div>
+                <div class="score-description" id="npsDescription"></div>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Distribuição das Respostas</h3>
+                <canvas id="distributionChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Evolução Temporal</h3>
+                <canvas id="trendChart"></canvas>
+            </div>
+            
+            <div class="comments-section">
+                <h3>Comentários</h3>
+                <div id="commentsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/sheets-api.js"></script>
+    <script src="js/charts.js"></script>
+    <script>
+        // Extrai o ID da planilha da URL
+        function getSheetIdFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('sheetId');
+        }
+        
+        // Carrega os dados quando a página é aberta
+        document.addEventListener('DOMContentLoaded', function() {
+            const sheetId = getSheetIdFromUrl();
+            if (sheetId) {
+                loadSheetData(sheetId);
+                document.getElementById('sheetsPreview').src = `https://docs.google.com/spreadsheets/d/${sheetId}/edit?usp=sharing&rm=minimal`;
+            } else {
+                window.location.href = 'index.html';
+            }
+            
+            // Configura botões
+            document.getElementById('changeSheet').addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+            
+            document.getElementById('refreshData').addEventListener('click', () => {
+                const sheetId = getSheetIdFromUrl();
+                loadSheetData(sheetId);
+            });
+        });
+    </script>
+</body>
+</html>
