@@ -225,3 +225,41 @@ button:disabled {
   border: 1px solid #eee;
   margin-top: 10px;
 }
+/* Correção de caracteres */
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* Container da planilha */
+.sheet-container {
+  margin: 20px 0;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#sheet-embed {
+  min-height: 500px;
+  position: relative;
+}
+
+#sheet-embed iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.loading, .error {
+  padding: 20px;
+  text-align: center;
+}
+
+.error {
+  color: #e74c3c;
+}
+
+.sheet-fallback {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
