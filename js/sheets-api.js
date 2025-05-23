@@ -1,3 +1,39 @@
+// sheets-api.js com tratamento robusto
+
+function extractSheetId(url) {
+    try {
+        if (!url || typeof url !== 'string') return null;
+        
+        // Remove possíveis parâmetros e fragments
+        const cleanUrl = url.split('?')[0].split('#')[0];
+        
+        // Extrai o ID conforme vários padrões possíveis
+        const patterns = [
+            /\/spreadsheets\/d\/([a-zA-Z0-9-_]{44})/, // URL completo
+            /^([a-zA-Z0-9-_]{44})$/                   // Apenas o ID
+        ];
+        
+        for (const pattern of patterns) {
+            const match = cleanUrl.match(pattern);
+            if (match && match[1]) return match[1];
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error extracting sheet ID:', error);
+        return null;
+    }
+}
+
+// Exemplo de uso seguro
+document.getElementById('loadData')?.addEventListener('click', async function() {
+    const url = document.getElementById('sheetsUrl')?.value?.trim() || '';
+    const sheetId = extractSheetId(url);
+    
+    if (!sheetId) {
+        alert('Por favor, insira um link válido do Google Sheets');
+        return;
+    }
 // sheets-api.js - Versão otimizada
 document.getElementById('loadData').addEventListener('click', async function() {
     // Mostrar feedback visual imediato
